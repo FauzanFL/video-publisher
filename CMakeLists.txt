@@ -23,6 +23,8 @@ idlcxx_generate(
 
 add_executable(StreamPublisher
   main.cpp
+  ddspublisher.h ddspublisher.cpp
+  qos_profiles.h
 )
 target_include_directories(StreamPublisher PRIVATE ${GST_INCLUDE_DIRS})
 target_link_libraries(StreamPublisher
