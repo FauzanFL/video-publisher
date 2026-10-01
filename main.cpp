@@ -18,15 +18,15 @@ int main(int argc, char *argv[])
     dds::domain::DomainParticipant participant(99);
 
     // Membuat objek DdsPublisher dan VideoReader
-    auto publisher = std::make_unique<DdsPublisher>(participant, &app);
-    auto reader = std::make_unique<VideoReader>("simulasi_video.mp4", &app);
+    DdsPublisher publisher(participant);
+    VideoReader reader("/home/fauzanfl/dev/video-stream-dds/simulasi_video.mp4");
 
     // Hubungkan Sinyal Qt: VideoReader -> Slot DdsPublisher
-    QObject::connect(reader.get(), &VideoReader::frameExtracted,
-                     publisher.get(), &DdsPublisher::publishFrame);
+    QObject::connect(&reader, &VideoReader::frameExtracted,
+                     &publisher, &DdsPublisher::publishFrame);
 
     // Logging aktivitas pengiriman setiap 30 frame
-    QObject::connect(publisher.get(), &DdsPublisher::framePublished,
+    QObject::connect(&publisher, &DdsPublisher::framePublished,
                      [](uint32_t frameId, size_t size) {
                          if (frameId % 30 == 0) {
                              std::cout << "[Publisher] Mengirim frame #" << frameId << " | Ukuran: " << size << " bytes" << std::endl;
@@ -34,15 +34,15 @@ int main(int argc, char *argv[])
                      });
 
     // Otomatis keluar aplikasi saat video selesai (EOS) atau error
-    QObject::connect(reader.get(), &VideoReader::eosReached, &app, &QCoreApplication::quit);
-    QObject::connect(reader.get(), &VideoReader::errorOccurred, [&app](const QString& err) {
+    QObject::connect(&reader, &VideoReader::eosReached, &a, &QCoreApplication::quit);
+    QObject::connect(&reader, &VideoReader::errorOccurred, [&a](const QString& err) {
         std::cerr << "[Main] Error: " << err.toStdString() << std::endl;
         QCoreApplication::exit(-1);
     });
 
     std::cout << "[Publisher] Memulai pengiriman video simulasi..." << std::endl;
 
-    if (!reader->start()) {
+    if (!reader.start()) {
         std::cerr << "[Main] Gagal menjalankan VideoReader!" << std::endl;
         return -1;
     }
