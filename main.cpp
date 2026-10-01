@@ -1,19 +1,51 @@
 #include <QCoreApplication>
+#include <gst/gst.h>
+#include <dds/dds.hpp>
+#include <iostream>
+#include <memory>
+
+#include "ddspublisher.h"
+#include "videoreader.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    // Set up code that uses the Qt event loop here.
-    // Call QCoreApplication::quit() or QCoreApplication::exit() to quit the application.
-    // A not very useful example would be including
-    // #include <QTimer>
-    // near the top of the file and calling
-    // QTimer::singleShot(5000, &a, &QCoreApplication::quit);
-    // which quits the application after 5 seconds.
+    // Inisialisasi GStreamer
+    gst_init(&argc, &argv);
 
-    // If you do not need a running Qt event loop, remove the call
-    // to QCoreApplication::exec() or use the Non-Qt Plain C++ Application template.
+    // Inisialisasi DDS DomainParticipant (Domain 99)
+    dds::domain::DomainParticipant participant(99);
+
+    // Membuat objek DdsPublisher dan VideoReader
+    auto publisher = std::make_unique<DdsPublisher>(participant, &app);
+    auto reader = std::make_unique<VideoReader>("simulasi_video.mp4", &app);
+
+    // Hubungkan Sinyal Qt: VideoReader -> Slot DdsPublisher
+    QObject::connect(reader.get(), &VideoReader::frameExtracted,
+                     publisher.get(), &DdsPublisher::publishFrame);
+
+    // Logging aktivitas pengiriman setiap 30 frame
+    QObject::connect(publisher.get(), &DdsPublisher::framePublished,
+                     [](uint32_t frameId, size_t size) {
+                         if (frameId % 30 == 0) {
+                             std::cout << "[Publisher] Mengirim frame #" << frameId << " | Ukuran: " << size << " bytes" << std::endl;
+                         }
+                     });
+
+    // Otomatis keluar aplikasi saat video selesai (EOS) atau error
+    QObject::connect(reader.get(), &VideoReader::eosReached, &app, &QCoreApplication::quit);
+    QObject::connect(reader.get(), &VideoReader::errorOccurred, [&app](const QString& err) {
+        std::cerr << "[Main] Error: " << err.toStdString() << std::endl;
+        QCoreApplication::exit(-1);
+    });
+
+    std::cout << "[Publisher] Memulai pengiriman video simulasi..." << std::endl;
+
+    if (!reader->start()) {
+        std::cerr << "[Main] Gagal menjalankan VideoReader!" << std::endl;
+        return -1;
+    }
 
     return QCoreApplication::exec();
 }

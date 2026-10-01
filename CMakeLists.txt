@@ -25,6 +25,7 @@ add_executable(StreamPublisher
   main.cpp
   ddspublisher.h ddspublisher.cpp
   qos_profiles.h
+  videoreader.h videoreader.cpp
 )
 target_include_directories(StreamPublisher PRIVATE ${GST_INCLUDE_DIRS})
 target_link_libraries(StreamPublisher
