@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
     // Membuat objek DdsPublisher dan VideoReader
     DdsPublisher publisher(participant);
-    VideoReader reader("/home/fauzanfl/dev/video-stream-dds/simulasi_video.mp4");
+    VideoReader reader("/home/fauzanfl/dev/video-stream-dds/simulasi_video.mp4", VideoReader::StreamMode::Compressed_H265);
 
     // Hubungkan Sinyal Qt: VideoReader -> Slot DdsPublisher
     QObject::connect(&reader, &VideoReader::frameExtracted,

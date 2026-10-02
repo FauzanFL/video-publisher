@@ -1,20 +1,36 @@
 #include "videoreader.h"
 #include "gst/app/gstappsink.h"
 #include <iostream>
+#include <QDebug>
 
-VideoReader::VideoReader(const QString& filePath, QObject* parent)
+VideoReader::VideoReader(const QString& filePath, StreamMode mode, QObject* parent)
     : QObject{parent},
     m_filePath(filePath),
+    m_mode(mode),
     pipeline_(nullptr),
     appsink_(nullptr)
 {
     GError* error = nullptr;
+    std::string pipelineStr;
 
-    // Pipeline: Baca file MP4 -> Demux -> Parse H.265 byte-stream -> AppSink (sync=true)
-    std::string pipelineStr =
-        "filesrc location=" + m_filePath.toStdString() + " ! qtdemux ! h265parse "
-        "! video/x-h265,stream-format=byte-stream,alignment=au "
-        "! appsink name=mysink emit-signals=true sync=true";
+    // Membangun Pipeline GStreamer secara dinamis berdasarkan Mode
+    if (m_mode == StreamMode::Compressed_H265) {
+        // Mode 1: H.265 (Efisien, hanya parsing bitstream dari MP4)
+        // Pipeline: Baca file MP4 -> Demux -> Parse H.265 byte-stream -> AppSink (sync=true)
+        pipelineStr =
+            "filesrc location=" + m_filePath.toStdString() + " ! qtdemux ! h265parse "
+            "! video/x-h265,stream-format=byte-stream,alignment=au "
+            "! appsink name=mysink emit-signals=true sync=true";
+        qDebug() << "[VideoReader] Mode: Terkompresi H.265";
+    } else {
+        // Mode 2: Raw Frame (Mendecode MP4 menjadi frame mentah BGRA 640x480)
+        // Menggunakan decodebin agar otomatis membaca segala format video lalu diconvert ke BGRA
+        pipelineStr =
+            "filesrc location=" + m_filePath.toStdString() + " ! decodebin ! videoconvert "
+            "! video/x-raw,format=BGRA,width=640,height=480 "
+            "! appsink name=mysink emit-signals=true sync=true";
+        qDebug() << "[VideoReader] Mode: Raw Frame Mentah (BGRA 640x480)";
+    }
     pipeline_ = gst_parse_launch(pipelineStr.c_str(), &error);
 
     if (error) {

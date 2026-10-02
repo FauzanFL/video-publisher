@@ -10,7 +10,13 @@ class VideoReader : public QObject
 {
     Q_OBJECT
 public:
-    explicit VideoReader(const QString& filePath, QObject* parent = nullptr);
+    // Pilihan mode output GStreamer
+    enum class StreamMode {
+        Compressed_H265, // Ekstrak byte-stream H.265 (Bandwidth kecil)
+        Raw_BGRA         // Decode menjadi frame mentah BGRA (Bandwidth besar)
+    };
+
+    explicit VideoReader(const QString& filePath, StreamMode mode, QObject* parent = nullptr);
     ~VideoReader() override;
 
     bool start();
@@ -24,6 +30,7 @@ signals:
 
 private:
     QString m_filePath;
+    StreamMode m_mode;
     GstElement* pipeline_ = nullptr;
     GstElement* appsink_ = nullptr;
 
