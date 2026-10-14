@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
     // Membuat objek DdsPublisher dan VideoReader
     DdsPublisher publisher(participant);
-    VideoReader reader("/home/fauzanfl/dev/video-stream-dds/simulasi_video.mp4", VideoReader::StreamMode::Compressed_H265);
+    VideoReader reader("rtsp://localhost:8554/stream", VideoReader::StreamMode::Compressed_H264);
 
     // Hubungkan Sinyal Qt: VideoReader -> Slot DdsPublisher
     QObject::connect(&reader, &VideoReader::frameExtracted,
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     // Logging aktivitas pengiriman setiap 30 frame
     QObject::connect(&publisher, &DdsPublisher::framePublished,
                      [](uint32_t frameId, size_t size) {
-                         if (frameId % 30 == 0) {
+                         if (frameId % 1 == 0) {
                              std::cout << "[Publisher] Mengirim frame #" << frameId << " | Ukuran: " << size << " bytes" << std::endl;
                          }
                      });

@@ -12,7 +12,7 @@ class VideoReader : public QObject
 public:
     // Pilihan mode output GStreamer
     enum class StreamMode {
-        Compressed_H265, // Ekstrak byte-stream H.265 (Bandwidth kecil)
+        Compressed_H264, // Ekstrak byte-stream H.264 (Bandwidth kecil)
         Raw_BGRA         // Decode menjadi frame mentah BGRA (Bandwidth besar)
     };
 

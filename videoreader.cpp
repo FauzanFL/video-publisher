@@ -3,9 +3,9 @@
 #include <iostream>
 #include <QDebug>
 
-VideoReader::VideoReader(const QString& filePath, StreamMode mode, QObject* parent)
+VideoReader::VideoReader(const QString& sourceUri, StreamMode mode, QObject* parent)
     : QObject{parent},
-    m_filePath(filePath),
+    m_filePath(sourceUri),
     m_mode(mode),
     pipeline_(nullptr),
     appsink_(nullptr)
@@ -14,19 +14,21 @@ VideoReader::VideoReader(const QString& filePath, StreamMode mode, QObject* pare
     std::string pipelineStr;
 
     // Membangun Pipeline GStreamer secara dinamis berdasarkan Mode
-    if (m_mode == StreamMode::Compressed_H265) {
-        // Mode 1: H.265 (Efisien, hanya parsing bitstream dari MP4)
-        // Pipeline: Baca file MP4 -> Demux -> Parse H.265 byte-stream -> AppSink (sync=true)
+    if (m_mode == StreamMode::Compressed_H264) {
+        // Mode 1: H.264 (Efisien, hanya parsing bitstream dari MP4)
+        // Pipeline: Baca file MP4 -> Demux -> Parse H.264 byte-stream -> AppSink (sync=true)
         pipelineStr =
-            "filesrc location=" + m_filePath.toStdString() + " ! qtdemux ! h265parse "
-            "! video/x-h265,stream-format=byte-stream,alignment=au "
+            "rtspsrc location=" + m_filePath.toStdString() + " protocols=tcp latency=500 "
+            "! rtph264depay ! h264parse "
+            "! video/x-h264,stream-format=byte-stream,alignment=au "
             "! appsink name=mysink emit-signals=true sync=true";
-        qDebug() << "[VideoReader] Mode: Terkompresi H.265";
+        qDebug() << "[VideoReader] Mode: Terkompresi H.264";
     } else {
         // Mode 2: Raw Frame (Mendecode MP4 menjadi frame mentah BGRA 640x480)
         // Menggunakan decodebin agar otomatis membaca segala format video lalu diconvert ke BGRA
         pipelineStr =
-            "filesrc location=" + m_filePath.toStdString() + " ! decodebin ! videoconvert "
+            "rtspsrc location=" + m_filePath.toStdString() + " protocols=tcp latency=500 "
+            "! decodebin ! videoconvert "
             "! video/x-raw,format=BGRA,width=640,height=480 "
             "! appsink name=mysink emit-signals=true sync=true";
         qDebug() << "[VideoReader] Mode: Raw Frame Mentah (BGRA 640x480)";
