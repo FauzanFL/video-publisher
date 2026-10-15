@@ -19,7 +19,7 @@ VideoReader::VideoReader(const QString& sourceUri, StreamMode mode, QObject* par
         // Pipeline: Baca file MP4 -> Demux -> Parse H.264 byte-stream -> AppSink (sync=true)
         pipelineStr =
             "rtspsrc location=" + m_filePath.toStdString() + " protocols=tcp latency=500 "
-            "! rtph264depay ! h264parse "
+            "! rtph264depay ! h264parse config-interval=1 "
             "! video/x-h264,stream-format=byte-stream,alignment=au "
             "! appsink name=mysink emit-signals=true sync=true";
         qDebug() << "[VideoReader] Mode: Terkompresi H.264";
